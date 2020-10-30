@@ -1,24 +1,9 @@
-## Settings ##
-$configuration = @{
-    driver_version = "11.7";
-    host_name = "<HOST NAME OR IP";
-    port = "<PORT>";
-    database = "<DB NAME>";
-    user = "SKYDBUSER";
-    password = "SKYDBPASS";
-    isolation_mode = "READ UNCOMMITED";
-    array_size = "50";
-    enableETWT = $true;
-    enableUWCT = $false;
-    enableKA = $true;
-}
- 
- 
-$connectionString =  "DRIVER={Progress OpenEdge $($configuration.driver_version) driver};HOST=$($configuration.host_name);PORT=$($configuration.port);DB=$($configuration.database);UID=$($configuration.user);PWD=$($configuration.password);DIL=$($configuration.isolation_mode);AS=$($configuration.array_size);"
- 
-if($configuration.enableETWT) { $connectionString += "ETWT=1;" }
-if($configuration.enableUWCT) { $connectionString += "UWCT=1;" }
-if($configuration.enableKA) { $connectionString += "KA=1;" }
+$config = ConvertFrom-Json $configuration;
+$connectionString =  "DRIVER={Progress OpenEdge $($config.driver_version) driver};HOST=$($config.host_name);PORT=$($config.port);DB=$($config.database);UID=$($config.user);PWD=$($config.password);DIL=$($config.isolation_mode);AS=$($config.array_size);"
+
+if($config.enableETWT) { $connectionString += "ETWT=1;" }
+if($config.enableUWCT) { $connectionString += "UWCT=1;" }
+if($config.enableKA) { $connectionString += "KA=1;" }
      
 function get_data_objects {
 [cmdletbinding()]
