@@ -6,8 +6,8 @@ HelloID Provisioning Source Connector for Skyward SMS 2.0
 
 # Employees Module
 - persons.employees.ps1
-- departmnets.employees.ps1
+- departments.employees.ps1
 
 # Students Module
 - persons.students.ps1
-- departmnets.students.ps1
+- departments.students.ps1
