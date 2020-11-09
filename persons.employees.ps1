@@ -150,7 +150,7 @@ foreach($employee in $employees)
     #Assignments
     foreach($assign in $assignments)
     {
-        if($assign.'NAME-ID' -ne $employee.'NAME-ID') { break; }
+        if($assign.'NAME-ID' -ne $employee.'NAME-ID') { continue; }
 
         $contract = @{};
         $contract["ExternalId"] = "$($assign.'HPMBRK-ID')"
