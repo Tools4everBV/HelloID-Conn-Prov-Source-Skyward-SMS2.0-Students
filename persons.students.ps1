@@ -1,4 +1,4 @@
-$config = ConvertFrom-Json $configuration;
+﻿$config = ConvertFrom-Json $configuration;
 $connectionString =  "DRIVER={Progress OpenEdge $($config.driver_version) driver};HOST=$($config.host_name);PORT=$($config.port);DB=$($config.database);UID=$($config.user);PWD=$($config.password);DIL=$($config.isolation_mode);AS=$($config.array_size);"
 
 if($config.enableETWT) { $connectionString += "ETWT=1;" }
