@@ -1,4 +1,4 @@
-# HelloID-Conn-Prov-Source-SkywardSMS2.0
+# HelloID-Conn-Prov-Source-Skyward-SMS2.0-Students
 HelloID Provisioning Source Connector for Skyward SMS 2.0
 
 # Requirements
