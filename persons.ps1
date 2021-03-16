@@ -1,10 +1,15 @@
-﻿$config = ConvertFrom-Json $configuration;
+﻿Write-Information "Processing Persons"
+
+#region Configuration
+$config = ConvertFrom-Json $configuration;
 $connectionString =  "DRIVER={Progress OpenEdge $($config.driver_version) driver};HOST=$($config.host_name);PORT=$($config.port);DB=$($config.database);UID=$($config.user);PWD=$($config.password);DIL=$($config.isolation_mode);AS=$($config.array_size);"
 
 if($config.enableETWT) { $connectionString += "ETWT=1;" }
 if($config.enableUWCT) { $connectionString += "UWCT=1;" }
 if($config.enableKA) { $connectionString += "KA=1;" }
-     
+#endregion Configuration
+
+#region Functions
 function get_data_objects {
 [cmdletbinding()]
 Param (
@@ -28,7 +33,20 @@ Param (
         @($result);
     }
 }
- 
+#endregion Functions
+
+#region Open VPN
+if($config.enableVPN) {
+    Write-Information "Opening VPN"
+    #Ensure VPN Connection is closed
+    &"$($config.vpnClosePath)" > $null 2>&1
+    
+    #Reopen VPN Connection
+    &"$($config.vpnOpenPath)" > $null 2>&1
+}
+#endregion Open VPN
+
+#region Execute
 $students = get_data_objects `
             -connectionString $connectionString `
             -query 'SELECT    "STUDENT"."NAME-ID"
@@ -60,7 +78,7 @@ $students = get_data_objects `
                         LEFT JOIN "PUB"."FS-CUST" ON "STUDENT"."NAME-ID" = "FS-CUST"."NAME-ID"
                         LEFT JOIN "PUB"."NAME-DUSER" ON "NAME-DUSER"."NAME-ID" = "STUDENT"."NAME-ID"
                         WHERE "STUDENT-ENTITY"."STUDENT-STATUS" = ''A''';
- 
+ Write-Information "$($students.count) Student Records";
  
 $studentEntities = get_data_objects `
             -connectionString $connectionString `
@@ -72,7 +90,7 @@ $studentEntities = get_data_objects `
                             , "STUDENT-PERCENT-ENROLLED"
                     FROM "PUB"."STUDENT-ENTITY"
                     WHERE "STUDENT-ENTITY"."STUDENT-STATUS" = ''A''';
- 
+  Write-Information "$($studentEntities.count) Student Entities Records";
  
 $calenderMaster = get_data_objects `
             -connectionString $connectionString `
@@ -87,13 +105,13 @@ $calenderMaster = get_data_objects `
                         FROM "PUB"."CALENDAR-MASTER"
                         INNER JOIN "PUB"."CALENDAR-DESC" ON "CALENDAR-DESC"."X-DEFAULT-CALENDAR" = 1 AND "CALENDAR-MASTER"."CALENDAR-ID" = "CALENDAR-DESC"."CALENDAR-ID" AND "CALENDAR-DESC"."ENTITY-ID" = "CALENDAR-MASTER"."ENTITY-ID"
                         WHERE "CAL-STP-DTE" >= CURDATE()';
+Write-Information "$($calenderMaster.count) Calendar Master Records";
 
- 
 foreach($student in $students)
 {
     $person = @{};
     $person["ExternalId"] = $student.'NAME-ID';
-    $person["DisplayName"] = "$($student.'FIRST-NAME') $($student.'LAST-NAME')"
+    $person["DisplayName"] = "$($student.'FIRST-NAME') $($student.'LAST-NAME') ($($student.'NAME-ID'))"
     $person["Role"] = "Student"
  
     foreach($prop in $student.PSObject.properties)
@@ -136,3 +154,13 @@ foreach($student in $students)
  
     Write-Output ($person | ConvertTo-Json -Depth 50);
 }
+#endregion Execute
+
+#region Close VPN
+if($config.enableVPN) {
+    Write-Information "Closing VPN"
+    &"$($config.vpnClosePath)" > $null 2>&1
+}
+#endregion Close VPN
+
+Write-Information "Finished Processing Persons"

@@ -21,6 +21,35 @@
     }
   },
   {
+    "key": "enableVPN",
+    "type": "checkbox",
+    "defaultValue": false,
+    "templateOptions": {
+      "label": "Enable VPN",
+      "required": true
+    }
+  },
+  {
+    "key": "vpnOpenPath",
+    "type": "input",
+    "defaultValue": "",
+    "templateOptions": {
+      "label": "Open VPN Path",
+      "placeholder": "C:\\Tools4ever\\Scripts\\connectSkywardVPN.bat",
+      "required": false
+    }
+  },
+  {
+    "key": "vpnClosePath",
+    "type": "input",
+    "defaultValue": "",
+    "templateOptions": {
+      "label": "Hostname/IP",
+      "placeholder": "C:\\Tools4ever\\Scripts\\disconnectSkywardVPN.bat",
+      "required": false
+    }
+  },
+  {
     "key": "database",
     "type": "input",
     "defaultValue": "SKYWARD",
