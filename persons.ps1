@@ -92,7 +92,7 @@ $studentEntities = get_data_objects `
                     WHERE "STUDENT-ENTITY"."STUDENT-STATUS" = ''A''';
   Write-Information "$($studentEntities.count) Student Entities Records";
  
-$calenderMaster = get_data_objects `
+$calendarMaster = get_data_objects `
             -connectionString $connectionString `
             -query 'SELECT    "CALENDAR-MASTER"."SCHOOL-YEAR"
                                 , "CALENDAR-MASTER"."ENTITY-ID"
@@ -105,7 +105,7 @@ $calenderMaster = get_data_objects `
                         FROM "PUB"."CALENDAR-MASTER"
                         INNER JOIN "PUB"."CALENDAR-DESC" ON "CALENDAR-DESC"."X-DEFAULT-CALENDAR" = 1 AND "CALENDAR-MASTER"."CALENDAR-ID" = "CALENDAR-DESC"."CALENDAR-ID" AND "CALENDAR-DESC"."ENTITY-ID" = "CALENDAR-MASTER"."ENTITY-ID"
                         WHERE "CAL-STP-DTE" >= CURDATE()';
-Write-Information "$($calenderMaster.count) Calendar Master Records";
+Write-Information "$($calendarMaster.count) Calendar Master Records";
 
 foreach($student in $students)
 {
@@ -127,27 +127,26 @@ foreach($student in $students)
     {
         if($entity.'STUDENT-ID' -eq $student.'NAME-ID')
         {
-            $contract = @{};
-            $contract["ExternalId"] = "$($student.'NAME-ID').$($entity.'SCHOOL-ID')"
-            $contract["Role"] = "Student"
-            foreach($prop in $entity.PSObject.properties)
+            foreach($calendar in $calendarMaster)
             {
-                if(@("RowError","RowState","Table","HasErrors","ItemArray") -contains $prop.Name) { continue; }
-                $contract[$prop.Name.replace('-','_')] = "$($prop.Value)";
-            }
- 
-            foreach($calendar in $calenderMaster)
-            {
-                 
                 if($entity.'CALENDAR-ID' -eq $calendar.'CALENDAR-ID')
                 {
+                    $contract = @{};
+                    $contract["ExternalId"] = "$($student.'NAME-ID').$($entity.'SCHOOL-ID').$($calendar.'SCHOOL-YEAR')"
+                    $contract["Role"] = "Student"
+                    $contract["Type"] = "Student"
                     $contract["START_DATE"] = $calendar.'CAL-STR-DTE' | Get-Date -Format "MM/dd/yyyy";
                     $contract["END_DATE"] = $calendar.'CAL-STP-DTE' | Get-Date -Format "MM/dd/yyyy";
                     $contract["SCHOOL_YEAR"] = $calendar.'SCHOOL-YEAR';
+                    foreach($prop in $entity.PSObject.properties)
+                    {
+                        if(@("RowError","RowState","Table","HasErrors","ItemArray") -contains $prop.Name) { continue; }
+                        $contract[$prop.Name.replace('-','_')] = "$($prop.Value)";
+                    }
+
+                    [void]$person.Contracts.Add($contract);
                 }
             }
- 
-            [void]$person.Contracts.Add($contract);
         }
     }
  
