@@ -82,30 +82,27 @@ $students = get_data_objects `
  
 $studentEntities = get_data_objects `
             -connectionString $connectionString `
-            -query 'SELECT "STUDENT-ID"
-                            , "ENTITY-ID"
-                            , "CALENDAR-ID"
-                            , "SCHOOL-ID"
-                            , "HOMEROOM-NUMBER"
-                            , "STUDENT-PERCENT-ENROLLED"
+            -query '
+                        SELECT  DISTINCT
+						  "STUDENT-ENTITY"."STUDENT-ID"
+						, "STUDENT-ENTITY"."ENTITY-ID"
+						, "STUDENT-ENTITY"."CALENDAR-ID"
+						, "STUDENT-ENTITY"."SCHOOL-ID"
+						, "STUDENT-ENTITY"."HOMEROOM-NUMBER"
+						, "STUDENT-ENTITY"."STUDENT-PERCENT-ENROLLED"
+						, "CALENDAR-MASTER"."SCHOOL-YEAR"
+                        , "CALENDAR-MASTER"."TRACK"
+                        , "CALENDAR-MASTER"."CAL-STR-DTE" "START_DATE"
+                        , "CALENDAR-MASTER"."CAL-STP-DTE" "END_DATE"
+                        , "CALENDAR-DESC"."CALENDAR-SDESC"
+                        , "CALENDAR-DESC"."CALENDAR-LDESC"
                     FROM "PUB"."STUDENT-ENTITY"
+                    INNER JOIN "PUB"."ENTITY" ON "ENTITY"."ENTITY-ID" = "STUDENT-ENTITY"."ENTITY-ID"
+                    INNER JOIN "PUB"."CALENDAR-MASTER" ON "CALENDAR-MASTER"."ENTITY-ID" = "ENTITY"."ENTITY-ID" AND "CALENDAR-MASTER"."SCHOOL-YEAR" = "ENTITY"."SCHOOL-YEAR" AND "CALENDAR-MASTER"."CALENDAR-ID" = "STUDENT-ENTITY"."CALENDAR-ID"
+                    INNER JOIN "PUB"."CALENDAR-DESC" ON "CALENDAR-DESC"."X-DEFAULT-CALENDAR" = 1 AND "CALENDAR-MASTER"."CALENDAR-ID" = "CALENDAR-DESC"."CALENDAR-ID" AND "CALENDAR-DESC"."ENTITY-ID" = "CALENDAR-MASTER"."ENTITY-ID"
                     WHERE "STUDENT-ENTITY"."STUDENT-STATUS" = ''A''';
   Write-Information "$($studentEntities.count) Student Entities Records";
- 
-$calendarMaster = get_data_objects `
-            -connectionString $connectionString `
-            -query 'SELECT    "CALENDAR-MASTER"."SCHOOL-YEAR"
-                                , "CALENDAR-MASTER"."ENTITY-ID"
-                                , "CALENDAR-MASTER"."TRACK"
-                                , "CALENDAR-MASTER"."CALENDAR-ID"
-                                , "CALENDAR-MASTER"."CAL-STR-DTE"
-                                , "CALENDAR-MASTER"."CAL-STP-DTE"
-                                , "CALENDAR-DESC"."CALENDAR-SDESC"
-                                , "CALENDAR-DESC"."CALENDAR-LDESC"
-                        FROM "PUB"."CALENDAR-MASTER"
-                        INNER JOIN "PUB"."CALENDAR-DESC" ON "CALENDAR-DESC"."X-DEFAULT-CALENDAR" = 1 AND "CALENDAR-MASTER"."CALENDAR-ID" = "CALENDAR-DESC"."CALENDAR-ID" AND "CALENDAR-DESC"."ENTITY-ID" = "CALENDAR-MASTER"."ENTITY-ID"
-                        WHERE "CAL-STP-DTE" >= CURDATE()';
-Write-Information "$($calendarMaster.count) Calendar Master Records";
+
 
 foreach($student in $students)
 {
@@ -127,26 +124,18 @@ foreach($student in $students)
     {
         if($entity.'STUDENT-ID' -eq $student.'NAME-ID')
         {
-            foreach($calendar in $calendarMaster)
-            {
-                if($entity.'CALENDAR-ID' -eq $calendar.'CALENDAR-ID')
-                {
-                    $contract = @{};
-                    $contract["ExternalId"] = "$($student.'NAME-ID').$($entity.'SCHOOL-ID').$($calendar.'SCHOOL-YEAR')"
-                    $contract["Role"] = "Student"
-                    $contract["Type"] = "Student"
-                    $contract["START_DATE"] = $calendar.'CAL-STR-DTE' | Get-Date -Format "MM/dd/yyyy";
-                    $contract["END_DATE"] = $calendar.'CAL-STP-DTE' | Get-Date -Format "MM/dd/yyyy";
-                    $contract["SCHOOL_YEAR"] = $calendar.'SCHOOL-YEAR';
-                    foreach($prop in $entity.PSObject.properties)
-                    {
-                        if(@("RowError","RowState","Table","HasErrors","ItemArray") -contains $prop.Name) { continue; }
-                        $contract[$prop.Name.replace('-','_')] = "$($prop.Value)";
-                    }
+			$contract = @{};
+			$contract["ExternalId"] = "$($student.'NAME-ID').$($entity.'ENTITY-ID').$($entity.'SCHOOL-YEAR').$($entity.'CALENDAR-ID')"
+			$contract["Role"] = "Student"
+			$contract["Type"] = "Student"
+			
+			foreach($prop in $entity.PSObject.properties)
+			{
+				if(@("RowError","RowState","Table","HasErrors","ItemArray") -contains $prop.Name) { continue; }
+				$contract[$prop.Name.replace('-','_')] = "$($prop.Value)";
+			}
 
-                    [void]$person.Contracts.Add($contract);
-                }
-            }
+			[void]$person.Contracts.Add($contract);
         }
     }
  
