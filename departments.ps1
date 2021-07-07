@@ -12,8 +12,6 @@ if($config.enableKA) { $connectionString += "KA=1;" }
 #Wait for VPN to open
 if($config.enableVPN) { Start-Sleep -s 5 }
 
-
-
 #region Functions
 function get_data_objects {
 [cmdletbinding()]
